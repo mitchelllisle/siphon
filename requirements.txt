@@ -1,0 +1,4 @@
+aiostream
+pydantic
+aiomysql
+asyncpg
