@@ -10,5 +10,7 @@ jobs:
     - name: Stop MySQL
       run: |
         sudo /etc/init.d/mysql stop
+    - name: Install Tox
+      run: pip install tox
     - name: Run Docker
       run: tox
