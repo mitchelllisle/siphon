@@ -11,4 +11,4 @@ jobs:
       run: |
         sudo /etc/init.d/mysql stop
     - name: Run Docker
-      run: sudo sh docker/ci/run-tests.sh
+      run: tox
