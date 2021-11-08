@@ -11,7 +11,7 @@ services:
       MYSQL_DATABASE: siphon
       MYSQL_ROOT_PASSWORD: admin
     volumes:
-      - ./mysql/init.sql/:/docker-entrypoint-initdb.d/init.sql
+      - ./../mysql/init.sql/:/docker-entrypoint-initdb.d/init.sql
 
   postgres:
       image: postgres
@@ -22,4 +22,4 @@ services:
       ports:
         - "5432:5432"
       volumes:
-        - ./postgres/:/docker-entrypoint-initdb.d/
+        - ./../postgres/:/docker-entrypoint-initdb.d/

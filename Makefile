@@ -53,6 +53,9 @@ lint: lint/flake8 ## check style
 test: ## run tests quickly with the default Python
 	py.test --cov siphon
 
+test-cov: test
+	> COVERAGE.txt
+
 test-all: ## run tests on every Python version with tox
 	tox
 
