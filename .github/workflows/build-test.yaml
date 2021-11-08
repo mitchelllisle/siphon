@@ -18,6 +18,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install Tox
-      run: pip install tox
-    - name: Run Tests with Tox
+      run: pip install -U pytest
+    - name: Run Tests
       run: py.test --cov=siphon
