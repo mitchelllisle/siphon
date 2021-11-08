@@ -13,11 +13,11 @@ jobs:
     - name: Stop MySQL
       run: |
         sudo /etc/init.d/mysql stop
-    - name: Initialize Python 3.7
+    - name: Initialize Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install Pytest
+    - name: Install Requirements
       run: make install
     - name: Run Tests
-      run: py.test --cov=siphon
+      run: make test

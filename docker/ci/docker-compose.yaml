@@ -4,7 +4,7 @@ services:
   mysql:
     image: mariadb:10.5.8
     env_file:
-      - ../../tests/tests.env
+      - ./../../tests/tests.env
     command: --default-authentication-plugin=mysql_native_password
     restart: always
     ports:
