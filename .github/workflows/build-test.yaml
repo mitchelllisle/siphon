@@ -17,7 +17,7 @@ jobs:
           MYSQL_DATABASE: siphon
           MYSQL_ROOT_PASSWORD: admin
         volumes:
-          - ./../mysql/init.sql/:/docker-entrypoint-initdb.d/init.sql
+          - docker/mysql/init.sql/:/docker-entrypoint-initdb.d/init.sql
 
       postgres:
         image: postgres
@@ -28,7 +28,7 @@ jobs:
         ports:
           - "5432:5432"
         volumes:
-          - ./../postgres/:/docker-entrypoint-initdb.d/
+          - docker/postgres/:/docker-entrypoint-initdb.d/
     steps:
     - uses: actions/checkout@v2
     - name: Stop MySQL
@@ -40,7 +40,5 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install Requirements
       run: make install
-    - name: Run containers
-      run: docker-compose -f docker/dev/docker-compose.yaml up -d
     - name: Run Tests
       run: make test
