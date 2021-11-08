@@ -19,5 +19,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install Requirements
       run: make install
+    - name: Run containers
+      run: docker-compose -f docker/dev/docker-compose.yaml up -d
     - name: Run Tests
       run: make test
