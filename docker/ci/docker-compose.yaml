@@ -18,7 +18,7 @@ services:
   postgres:
       image: postgres
       env_file:
-        - ../../tests/tests.env
+        - ./../../tests/tests.env
       environment:
         POSTGRES_USER: admin
         POSTGRES_PASSWORD: admin

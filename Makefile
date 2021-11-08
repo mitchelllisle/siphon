@@ -95,7 +95,7 @@ install: clean install-tests install-dev ## install the package to the active Py
 
 
 run-database: stop-database
-	docker-compose -f docker/docker-compose.yaml up -d
+	docker-compose -f docker/dev/docker-compose.yaml up -d
 
 stop-database:
-	docker-compose -f docker/docker-compose.yaml down --remove-orphans -v
+	docker-compose -f docker/dev/docker-compose.yaml down --remove-orphans -v
