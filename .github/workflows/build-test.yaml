@@ -16,5 +16,5 @@ jobs:
         python-version: 3.7
     - name: Install Tox
       run: pip install tox
-    - name: Run Docker
+    - name: Run Tests with Tox
       run: tox
