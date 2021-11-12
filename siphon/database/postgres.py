@@ -13,7 +13,7 @@ class PostgresConfig(DatabaseConfig):
 
 class AioPostgres:
     def __init__(
-        self, config: DatabaseConfig, timeout: int = None, min_size: int = 1, max_size: int = 10
+        self, config: PostgresConfig, timeout: int = None, min_size: int = 1, max_size: int = 10
     ):
         """
         AioPostgres is an async postgres client that allows you to setup a connection pool for
@@ -37,10 +37,14 @@ class AioPostgres:
 
     async def setup_pool(self) -> None:
         self.pool = await create_pool(
-            **self.config.dict(),
+            host=self.config.host.get_secret_value(),
+            port=self.config.port,
+            user=self.config.user.get_secret_value(),
+            password=self.config.password.get_secret_value(),
+            database=self.config.database,
             command_timeout=self.timeout,
             min_size=self.min_size,
-            max_size=self.max_size
+            max_size=self.max_size,
         )
 
     async def __aenter__(self):
