@@ -3,4 +3,4 @@ set -e
 
 cd /source
 make install
-tox
+make test
