@@ -3,9 +3,50 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
-from siphon import AioQueue, CollectedError, queuecollect
+from siphon import (AioQueue, CollectedError, DiscardOnViolation,
+                    RaiseOnViolation, TypedAioQueue, ViolationStrategy,
+                    queuecollect)
 
 ahundredints = partial(range, 100)
+
+
+def test_typed_queue():
+    q = TypedAioQueue(model=int)
+    q.put_nowait(100)
+
+    assert q.qsize() == 1
+    assert q.get_nowait() == 100
+
+
+def test_typed_queue_violation():
+    q = TypedAioQueue(model=int, violations_strategy=RaiseOnViolation)
+    with pytest.raises(TypeError):
+        q.put_nowait('100')
+
+
+def test_typed_queue_violation_strat():
+    strat = ViolationStrategy()
+    with pytest.raises(NotImplementedError):
+        strat(1, int)
+
+
+def test_typed_queue_violation_strat_type_checking():
+    strat = ViolationStrategy()
+    assert strat._is_item_of_type(1, int) is True
+    assert strat._is_item_of_type('1', int) is False
+
+
+def test_raise_strat():
+    strat = RaiseOnViolation()
+    assert strat.checks(1, int) == 1
+    with pytest.raises(TypeError):
+        strat.checks(1, str)
+
+
+def test_ignore_strat():
+    strat = DiscardOnViolation()
+    assert strat.checks(1, int) == 1
+    assert strat.checks(1, str) is None
 
 
 def test_queue_plus():

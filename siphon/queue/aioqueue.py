@@ -3,8 +3,10 @@ import csv
 import functools
 import json
 from asyncio import Queue
+from siphon.queue import violations
+from siphon.queue.types import DataT
 from typing import (IO, Any, AsyncGenerator, Callable, Dict, Generator, List,
-                    Tuple, Union)
+                    Tuple, Union, Type)
 
 
 class AioQueue(Queue):
@@ -34,6 +36,25 @@ class AioQueue(Queue):
     def __iter__(self) -> Generator:
         for _ in range(self.qsize()):
             yield self.get_nowait()
+
+
+class TypedAioQueue(AioQueue):
+    def __init__(
+            self,
+            model: DataT = None,
+            violations_strategy: Type[violations.ViolationStrategy] = violations.RaiseOnViolation,
+            maxsize: int = 0,
+            loop=None
+    ):
+        self._model = model
+        self._check_for_violation = violations_strategy()
+        super().__init__(maxsize=maxsize, loop=loop)
+
+    def _put(self, item: Dict):
+        if self._model:
+            new = self._check_for_violation(item, self._model)
+            if new:
+                return super()._put(new)
 
 
 class CollectedError:
