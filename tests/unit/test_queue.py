@@ -1,6 +1,9 @@
-from siphon import AioQueue, queuecollect, CollectedError
 from functools import partial
+from unittest.mock import mock_open, patch
+
 import pytest
+
+from siphon import AioQueue, CollectedError, queuecollect
 
 ahundredints = partial(range, 100)
 
@@ -38,7 +41,7 @@ async def test_queuecollect_errs():
 
     @queuecollect(errors=eq)
     def raiseerr(i: int, err=Exception):
-        raise err(f"error with {i}")
+        raise err(f'error with {i}')
 
     [await raiseerr(i) for i in ahundredints()]
     assert eq.qsize() == 100
@@ -51,15 +54,15 @@ async def test_queuecollect_collectederror():
 
     @queuecollect(errors=eq)
     def raiseerr(i: int, **kwargs):
-        raise Exception(f"error with {i}")
+        raise Exception(f'error with {i}')
 
     await raiseerr(1, test=2)
     err = eq.get_nowait()
-    assert err.error_name == "Exception"
-    assert err.func_name == "raiseerr"
-    assert err.args == (1, )
-    assert err.kwargs == {"test": 2}
-    assert err.func.__name__ == "raiseerr"
+    assert err.error_name == 'Exception'
+    assert err.func_name == 'raiseerr'
+    assert err.args == (1,)
+    assert err.kwargs == {'test': 2}
+    assert err.func.__name__ == 'raiseerr'
 
 
 @pytest.mark.asyncio
@@ -68,7 +71,7 @@ async def test_queuecollect_collectederror_reraise():
 
     @queuecollect(errors=eq)
     def raiseerr(i: int, **kwargs):
-        raise Exception(f"error with {i}")
+        raise Exception(f'error with {i}')
 
     await raiseerr(1, test=2)
     with pytest.raises(Exception):
@@ -101,3 +104,15 @@ async def test_queuecollect_successqueue():
     [await raiseerr(i) for i in ahundredints()]
     assert sq.qsize() == 100
     assert all([isinstance(x, int) for x in sq])
+
+
+@pytest.mark.asyncio
+@patch('builtins.open', mock_open(read_data='data'))
+async def test_csv_export():
+    q = AioQueue()
+    await q.put({'a': 1})
+
+    q.to_csv('test.csv', cols=['a'])
+
+    await q.put({'a': 1})
+    q.to_json('test.json')

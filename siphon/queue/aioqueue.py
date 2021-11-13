@@ -1,7 +1,10 @@
-from typing import Tuple, Any, Dict, Callable, AsyncGenerator, Generator
 import asyncio
-from asyncio import Queue
+import csv
 import functools
+import json
+from asyncio import Queue
+from typing import (IO, Any, AsyncGenerator, Callable, Dict, Generator, List,
+                    Tuple, Union)
 
 
 class AioQueue(Queue):
@@ -12,6 +15,21 @@ class AioQueue(Queue):
         for _ in range(self.qsize()):
             row = await self.get()
             yield row
+
+    def to_json(self, path: Union[str, bytes, IO], mode: str = 'w', **kwargs) -> str:
+        with open(path, mode, **kwargs) as file:
+            json.dump(self.collect(), file)
+            return path
+
+    def to_csv(
+        self, path: Union[str, bytes, IO], cols: List[str], mode: str = 'w', **kwargs
+    ) -> str:
+        with open(path, mode, **kwargs) as file:
+            writer = csv.DictWriter(file, fieldnames=cols)
+            writer.writeheader()
+            for row in self:
+                writer.writerow(row)
+            return path
 
     def __iter__(self) -> Generator:
         for _ in range(self.qsize()):
@@ -76,6 +94,7 @@ def queuecollect(errors: Queue, success: Queue = None):
         Defaults to None. If None, we return the output value as normal
     Returns: Wrapped func
     """
+
     def wrapper(func):
         @functools.wraps(func)
         async def inner(*args, **kwargs):
@@ -89,13 +108,8 @@ def queuecollect(errors: Queue, success: Queue = None):
                 else:
                     return result
             except Exception as err:
-                await errors.put(
-                    CollectedError(
-                        func=func,
-                        error=err,
-                        args=args,
-                        kwargs=kwargs
-                    )
-                )
+                await errors.put(CollectedError(func=func, error=err, args=args, kwargs=kwargs))
+
         return inner
+
     return wrapper
