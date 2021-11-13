@@ -1,6 +1,7 @@
-from typing import AsyncGenerator, List, Tuple, Union
+from typing import AsyncGenerator, List, Tuple, Type
 
 from asyncpg import Record, create_pool
+from pydantic import BaseModel
 
 from siphon.database.config import DatabaseConfig
 
@@ -12,7 +13,7 @@ class PostgresConfig(DatabaseConfig):
 
 class AioPostgres:
     def __init__(
-        self, config: DatabaseConfig, timeout: int = None, min_size: int = 1, max_size: int = 10
+        self, config: PostgresConfig, timeout: int = None, min_size: int = 1, max_size: int = 10
     ):
         """
         AioPostgres is an async postgres client that allows you to setup a connection pool for
@@ -31,15 +32,19 @@ class AioPostgres:
         self.max_size = max_size
 
     @property
-    def closed(self) -> str:
-        return self.pool._closed
+    def closed(self) -> bool:
+        return self.pool._closed  # type: ignore
 
     async def setup_pool(self) -> None:
         self.pool = await create_pool(
-            **self.config.dict(),
+            host=self.config.host.get_secret_value(),
+            port=self.config.port,
+            user=self.config.user.get_secret_value(),
+            password=self.config.password.get_secret_value(),
+            database=self.config.database,
             command_timeout=self.timeout,
             min_size=self.min_size,
-            max_size=self.max_size
+            max_size=self.max_size,
         )
 
     async def __aenter__(self):
@@ -49,7 +54,9 @@ class AioPostgres:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.close_pool()
 
-    async def read(self, query: str, params: Union[Tuple, str, int] = None) -> AsyncGenerator:
+    async def read(
+        self, query: str, params: Tuple = None, model: Type[BaseModel] = None
+    ) -> AsyncGenerator:
         """
         Read results from postgres and return an AsyncGenerator. This allows you to read large
         amounts of data without having to store them in memory.
@@ -60,6 +67,8 @@ class AioPostgres:
         Args:
             query: The query you want to return data for
             params: Any params you need to pass to the query
+            model: An optional pydantic.BaseModel that will be run over the row to parse to
+            a standard format
 
         Returns: An AsyncGenerator
 
@@ -67,13 +76,18 @@ class AioPostgres:
         async with self.pool.acquire() as conn:  # type: ignore
             async with conn.transaction():
                 if params:
-                    cur = conn.cursor(query, params)
+                    cur = conn.cursor(query, *params)
                 else:
                     cur = conn.cursor(query)
                 async for row in cur:
-                    yield row
+                    if model:
+                        yield model(**row)
+                    else:
+                        yield row
 
-    async def read_all(self, query: str, params: Tuple = None) -> List[Record]:
+    async def read_all(
+        self, query: str, params: Tuple = None, model: Type[BaseModel] = None
+    ) -> List[Record]:
         """
         In some cases you might want to just return the data without dealing with iteration you can
         use this. We'll return all the records in a list. Be careful using this for large datasets
@@ -81,13 +95,14 @@ class AioPostgres:
         Args:
             query: The query you want to return data for
             params: Any params you need to pass to the query
+            model:
 
         Returns: A List of Records that can be accessed as you would a Tuple (E.g record[0] or
         a Dict (E.g record["column"])
 
         """
         rows = []
-        async for row in self.read(query, params):
+        async for row in self.read(query=query, params=params, model=model):
             rows.append(row)
         return rows
 

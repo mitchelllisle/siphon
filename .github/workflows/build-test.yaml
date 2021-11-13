@@ -5,40 +5,10 @@ on: [push]
 jobs:
   build-and-test:
     runs-on: ubuntu-18.04
-    strategy:
-      matrix:
-        python-version: [ '3.7', '3.8', '3.9' ]
-    services:
-      mysql:
-        image: mariadb:10.5.8
-        ports:
-          - "3306:3306"
-        env:
-          MYSQL_DATABASE: siphon
-          MYSQL_ROOT_PASSWORD: admin
-        volumes:
-          - ./docker/mysql/init.sql/:/docker-entrypoint-initdb.d/init.sql
-
-      postgres:
-        image: postgres
-        env:
-          POSTGRES_USER: admin
-          POSTGRES_PASSWORD: admin
-          POSTGRES_DB: siphon
-        ports:
-          - "5432:5432"
-        volumes:
-          - ./docker/postgres/:/docker-entrypoint-initdb.d/
     steps:
     - uses: actions/checkout@v2
     - name: Stop MySQL
       run: |
         sudo /etc/init.d/mysql stop
-    - name: Initialize Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install Requirements
-      run: make install
-    - name: Run Tests
-      run: make test
+    - name: Run containers
+      run: docker-compose -f docker/ci/docker-compose.yaml up --abort-on-container-exit

@@ -1,4 +1,4 @@
-from typing import AsyncGenerator, Dict, List, Tuple, Union
+from typing import AsyncGenerator, Dict, List, Optional, Tuple, Union
 
 import aiomysql as mysql
 
@@ -7,13 +7,13 @@ from siphon.database.config import DatabaseConfig
 
 class MySQLConfig(DatabaseConfig):
     port: int = 3306
-    db: str = None
+    db: Optional[str]
 
 
 class AioMySQL:
     def __init__(
         self,
-        config: DatabaseConfig,
+        config: MySQLConfig,
         cursor_class: mysql.Cursor = mysql.SSDictCursor,
         min_size: int = 1,
         max_size: int = 10,
@@ -26,7 +26,13 @@ class AioMySQL:
 
     async def setup_pool(self):
         self.pool = await mysql.create_pool(
-            **self.config.dict(), minsize=self.min_size, maxsize=self.max_size
+            host=self.config.host.get_secret_value(),
+            user=self.config.user.get_secret_value(),
+            password=self.config.password.get_secret_value(),
+            db=self.config.db,
+            port=self.config.port,
+            minsize=self.min_size,
+            maxsize=self.max_size,
         )
 
     async def __aenter__(self):
@@ -37,7 +43,7 @@ class AioMySQL:
         await self.close_pool()
 
     async def read(self, query: str, params: Tuple = None) -> AsyncGenerator:
-        async with self.pool.acquire() as conn:
+        async with self.pool.acquire() as conn:  # type: ignore
             async with conn.cursor(self.cursor_class) as cur:
                 await cur.execute(query, params)
                 async for row in cur:
@@ -50,13 +56,13 @@ class AioMySQL:
         return rows
 
     async def write(self, stmt: str, params: Union[Tuple, str, int]) -> None:
-        async with self.pool.acquire() as conn:
+        async with self.pool.acquire() as conn:  # type: ignore
             async with conn.cursor() as cur:
                 await cur.executemany(stmt, params)
             await conn.commit()
 
     async def commit(self, stmt: str):
-        async with self.pool.acquire() as conn:
+        async with self.pool.acquire() as conn:  # type: ignore
             async with conn.cursor() as cur:
                 await cur.execute(stmt)
             await conn.commit()

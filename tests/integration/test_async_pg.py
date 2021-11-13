@@ -2,6 +2,7 @@ from asyncio import TimeoutError
 
 import aiounittest
 import pytest
+from pydantic import UUID4, BaseModel
 
 from siphon import AioPostgres, PostgresConfig, Record
 
@@ -32,11 +33,14 @@ class TestAioPostgres(aiounittest.AsyncTestCase):
 
     async def test_read_with_params(self):
         _id = 'b7337fa5-3e17-4628-b4db-00af02e07fdc'
+        _type = 'semi-hollow-electric'
         await self.postgres.setup_pool()
         async for row in self.postgres.read(
-            query='SELECT * FROM instruments.guitars WHERE id = $1', params=_id
+            query='SELECT * FROM instruments.guitars WHERE id = $1 AND type = $2',
+            params=(_id, _type),
         ):
             assert str(row['id']) == _id
+            assert str(row['type']) == _type
         await self.postgres.close_pool()
 
     async def test_read_all(self):
@@ -70,3 +74,20 @@ class TestAioPostgres(aiounittest.AsyncTestCase):
     async def test_query_wait_timeout(self):
         async with AioPostgres(self.config) as pg:
             await pg.read_all('SELECT pg_sleep(10)')
+
+    async def test_query_with_model(self):
+        class Guitars(BaseModel):
+            id: UUID4
+            make: str
+            model: str
+            type: str
+
+        async with AioPostgres(self.config) as pg:
+            data = await pg.read_all('SELECT * from instruments.guitars', model=Guitars)
+
+        row = data[0]
+        assert all(map(lambda x: isinstance(x, Guitars), data))
+        assert str(row.id) == 'b7337fa5-3e17-4628-b4db-00af02e07fdc'
+        assert row.make == 'rickenbacker'
+        assert row.model == '330'
+        assert row.type == 'semi-hollow-electric'

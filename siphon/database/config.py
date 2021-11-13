@@ -1,11 +1,11 @@
-from pydantic import BaseSettings, Extra
+from pydantic import BaseSettings, Extra, SecretStr
 
 
 class DatabaseConfig(BaseSettings):
-    host: str
+    host: SecretStr
     port: int
-    user: str
-    password: str
+    user: SecretStr
+    password: SecretStr
 
     class Config:
         extra = Extra.ignore
