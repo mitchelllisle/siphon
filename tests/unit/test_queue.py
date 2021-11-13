@@ -3,9 +3,33 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
-from siphon import AioQueue, CollectedError, queuecollect
+from siphon import (AioQueue, CollectedError, queuecollect, TypedAioQueue,
+                    DiscardOnViolation, RaiseOnViolation, ViolationStrategy, ViolationStrategyTypeError)
 
 ahundredints = partial(range, 100)
+
+
+def test_typed_queue():
+    q = TypedAioQueue(model=int)
+    q.put_nowait(100)
+
+    assert q.qsize() == 1
+    assert q.get_nowait() == 100
+
+
+def test_typed_queue_violation():
+    q = TypedAioQueue(model=int, violations_strategy=RaiseOnViolation)
+    with pytest.raises(TypeError):
+        q.put_nowait('100')
+
+
+def test_typed_queue_violation_strat():
+    q = TypedAioQueue(model=int, violations_strategy=DiscardOnViolation)
+    q.put_nowait(100)
+    q.put_nowait('100')
+
+    assert q.qsize() == 1
+    assert q.get_nowait() == 100
 
 
 def test_queue_plus():
