@@ -99,3 +99,11 @@ run-database: stop-database
 
 stop-database:
 	docker-compose -f docker/dev/docker-compose.yaml down --remove-orphans -v
+
+dist: clean ## builds source and wheel package
+	python setup.py sdist
+	python setup.py bdist_wheel
+	ls -l dist
+
+publish: clean dist
+	twine upload dist/*

@@ -1,152 +1,166 @@
-from typing import AsyncGenerator, List, Tuple, Type
+from typing import Dict, Generator, List, Tuple, Union
 
-from asyncpg import Record, create_pool
-from pydantic import BaseModel
+import pg8000.dbapi as postgresql
 
-from siphon.database.config import DatabaseConfig
-
-
-class PostgresConfig(DatabaseConfig):
-    port: int = 5432
-    database: str = 'postgres'
+from siphon.database.config import PostgresConfig
 
 
-class AioPostgres:
-    def __init__(
-        self, config: PostgresConfig, timeout: int = None, min_size: int = 1, max_size: int = 10
-    ):
+class PendingConnectionError(ValueError):
+    """Error for when you attempt to use connection before calling setup_connection"""
+
+
+class PendingConnection:
+    """Pending Connection Class
+    This class is used to differentiate between having made an actual connection to the database
+    vs only having instantiated the class. This is important so that we can catch any confusing
+    errors and instead return more helpful messages explaining that a connection has not been made
+    yet.
+    """
+
+    def __enter__(self):
+        raise PendingConnectionError(
+            'You are trying to use a PendingConnection object. '
+            'Did you forget to run setup_connection()?'
+        )
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+    def close(self):
+        pass
+
+    def commit(self):
+        pass
+
+
+class ContextCursor(postgresql.Cursor):
+    """ContextCursor
+    For some reason cursors always require you to define an explicit connect and close. This turns
+    these operations into a context manager so we can use them safely and ensure the cursor is
+    closed after use.
+    """
+
+    def __enter__(self):
+        if isinstance(self.connection, PendingConnection):
+            raise PendingConnectionError(
+                'Connection to database has not been made. '
+                'Did you forget to call the setup_connection() method?'
+            )
+        else:
+            return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+
+class Postgres:
+    def __init__(self, config: PostgresConfig):
         """
-        AioPostgres is an async postgres client that allows you to setup a connection pool for
-        Postgres and read and write data asynchronously. Contains an async context manager for easy
-        setup and closing of the connections that you open.
+        Synchronous Postgres client for interacting with Postgres databases. For Asynchronous
+        Postgres client see siphon.AioPostgres
         Args:
-            config: a DatabaseConfig object that contains all the connection details for postgres
-            timeout: max time before a query is cancelled
-            min_size: The minimum # of connections that will be reserved for this client
-            max_size: The maximum # of connections that will be reserved for this client
+            config: A PostgresConfig object for connecting to the database
         """
-        self.pool = None
         self.config = config
-        self.timeout = timeout
-        self.min_size = min_size
-        self.max_size = max_size
+        self.connection: Union[postgresql.Connection, PendingConnection] = PendingConnection()
 
-    @property
-    def closed(self) -> bool:
-        return self.pool._closed  # type: ignore
+    def setup_connection(self) -> None:
+        """
+        Make a call to the database and attempt to setup a connection. This can either be called
+        explicitly or will be called as part of a context statement (I.e using `with`)
 
-    async def setup_pool(self) -> None:
-        self.pool = await create_pool(
+        Returns: None
+
+        """
+        self.connection = postgresql.connect(
             host=self.config.host.get_secret_value(),
             port=self.config.port,
             user=self.config.user.get_secret_value(),
             password=self.config.password.get_secret_value(),
             database=self.config.database,
-            command_timeout=self.timeout,
-            min_size=self.min_size,
-            max_size=self.max_size,
         )
 
-    async def __aenter__(self):
-        await self.setup_pool()
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.close_pool()
-
-    async def read(
-        self, query: str, params: Tuple = None, model: Type[BaseModel] = None
-    ) -> AsyncGenerator:
+    def close_connection(self) -> None:
         """
-        Read results from postgres and return an AsyncGenerator. This allows you to read large
-        amounts of data without having to store them in memory.
-        Examples:
-            pg = Postgres()
-            async for row in pg.read("SELECT * FROM bigtable"):
-                process(row)
-        Args:
-            query: The query you want to return data for
-            params: Any params you need to pass to the query
-            model: An optional pydantic.BaseModel that will be run over the row to parse to
-            a standard format
-
-        Returns: An AsyncGenerator
-
-        """
-        async with self.pool.acquire() as conn:  # type: ignore
-            async with conn.transaction():
-                if params:
-                    cur = conn.cursor(query, *params)
-                else:
-                    cur = conn.cursor(query)
-                async for row in cur:
-                    if model:
-                        yield model(**row)
-                    else:
-                        yield row
-
-    async def read_all(
-        self, query: str, params: Tuple = None, model: Type[BaseModel] = None
-    ) -> List[Record]:
-        """
-        In some cases you might want to just return the data without dealing with iteration you can
-        use this. We'll return all the records in a list. Be careful using this for large datasets
-        as it will try and load everything in memory.
-        Args:
-            query: The query you want to return data for
-            params: Any params you need to pass to the query
-            model:
-
-        Returns: A List of Records that can be accessed as you would a Tuple (E.g record[0] or
-        a Dict (E.g record["column"])
-
-        """
-        rows = []
-        async for row in self.read(query=query, params=params, model=model):
-            rows.append(row)
-        return rows
-
-    async def write(self, stmt: str, params: Tuple) -> None:
-        """
-        Write data to a table with the given statement and data
-        Args:
-            stmt: The Insert statement you want to run
-            params: The data to pass as params
+        Close the connection to the database. Can be used explicitly or will be called as you exit
+        out of a context managed statement.
 
         Returns: None
 
         """
-        async with self.pool.acquire() as conn:  # type: ignore
-            async with conn.transaction():
-                await conn.executemany(stmt, params)
+        self.connection.close()
 
-    async def commit(self, stmt: str) -> None:
+    def __enter__(self):
+        self.setup_connection()
+        return self
+
+    def __exit__(self, *args):
+        self.close_connection()
+
+    def write(self, stmt: str, rows: List[Tuple]) -> int:
         """
-        Run a command against the database. This is useful for statements where you need to change
-        the database in some way E.g ALTER, CREATE, DROP statements etc
+        Write some data to the database by passing an insert statement and a list of tuples for the
+        rows
+        Args:
+            stmt: The insert statement to run. `%s` placeholders are used for indicating params
+            rows: A list of tuples containing the data to pass to the above query.
+
+        Returns: Row count as an integer
+
+        """
+        with ContextCursor(connection=self.connection) as cursor:
+            cursor.executemany(stmt, rows)
+            self.connection.commit()
+            return cursor.rowcount
+
+    def commit(self, stmt: str) -> int:
+        """
+        Although mostly the same as the write method - commit is useful for identifying when you
+        are making changes to the database and not pass params. Use this for any CREATE, DROP etc
+        statements where you are managing the database to indicate to other developers where you are
+        changing the database VS writing data to it
         Args:
             stmt: The statement to run
 
-        Returns: None
+        Returns: Row count
 
         """
-        async with self.pool.acquire() as conn:  # type: ignore
-            await conn.execute(stmt)
+        with ContextCursor(connection=self.connection) as cursor:
+            cursor.execute(stmt)
+            self.connection.commit()
+            return cursor.rowcount
 
-    async def close_pool(self) -> None:
-        await self.pool.close()  # type: ignore
-
-    def writer(self, stmt: str):
-        """return a writer for the given statment.
-
-        Basically just currys the write method into a coroutine that accepts a batch of parameters
-        and writes using the given statement. Obviously this is useful if you are batching inserts.
-
+    def read(self, query: str, params: Tuple = None) -> Generator:
+        """
+        Read data from the database using the given query and params. This is a generator so you can
+        iterate through the rows without loading them all into memory.
         Args:
-            stmt: The Insert statement you want to run
+            query: The query to run
+            params: Any params to be substituted for `%s` strings in above query
+
+        Returns: A generator
+
         """
+        with ContextCursor(self.connection) as cursor:
+            if params is not None:
+                cursor.execute(query, params)
+            else:
+                cursor.execute(query)
 
-        async def writer(batch):
-            await self.write(stmt, batch)
+            keys = [k[0] for k in cursor.description]
+            for row in cursor:
+                yield dict(zip(keys, row))
 
-        return writer
+    def read_all(self, query: str, params: Tuple = None) -> List[Dict]:
+        """
+        If you want to return all rows from the query without worrying about memory management
+        then this method is useful. It will return a list of dictionaries containing the results
+        of the query
+        Args:
+            query: The query to run
+            params: Any params to be substituted for `%s` strings in above query
+
+        Returns: A list of dicts with the data from the query
+
+        """
+        return [row for row in self.read(query, params)]

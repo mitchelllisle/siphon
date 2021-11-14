@@ -2,3 +2,4 @@ aiostream
 pydantic
 aiomysql
 asyncpg
+pg8000

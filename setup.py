@@ -34,11 +34,11 @@ setup(
     license='GNU General Public License v3',
     include_package_data=True,
     keywords='siphon',
-    name='siphon',
+    name='siphon-data',
     packages=find_packages(include=['siphon', 'siphon.*']),
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/mitchelllisle/siphon',
-    version='0.4.0',
+    version='0.5.0',
     zip_safe=False,
 )
