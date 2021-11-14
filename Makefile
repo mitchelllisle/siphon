@@ -54,7 +54,7 @@ test: ## run tests quickly with the default Python
 	py.test --cov siphon
 
 test-cov: test
-	> COVERAGE.txt
+	coverage report > COVERAGE.txt
 
 test-all: ## run tests on every Python version with tox
 	tox
