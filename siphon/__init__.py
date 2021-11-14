@@ -12,4 +12,5 @@ from siphon.queue.aioqueue import CollectedError  # noqa: F401
 from siphon.queue.aioqueue import (AioQueue, TypedAioQueue,  # noqa: F401
                                    queuecollect)
 from siphon.queue.violations import RaiseOnViolation  # noqa: F401
-from siphon.queue.violations import DiscardOnViolation, ViolationStrategy # noqa: F401
+from siphon.queue.violations import (DiscardOnViolation,  # noqa: F401
+                                     ViolationStrategy)
