@@ -34,7 +34,7 @@ setup(
     license='GNU General Public License v3',
     include_package_data=True,
     keywords='siphon',
-    name='siphon',
+    name='siphon-data',
     packages=find_packages(include=['siphon', 'siphon.*']),
     test_suite='tests',
     tests_require=test_requirements,

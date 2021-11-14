@@ -9,3 +9,8 @@ class DatabaseConfig(BaseSettings):
 
     class Config:
         extra = Extra.ignore
+
+
+class PostgresConfig(DatabaseConfig):
+    port: int = 5432
+    database: str = 'postgres'
