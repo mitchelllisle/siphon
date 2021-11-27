@@ -23,3 +23,11 @@ services:
         - "5432:5432"
       volumes:
         - ./../postgres/:/docker-entrypoint-initdb.d/
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    hostname: "rabbit"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    labels:
+      NAME: "rabbitmq"
