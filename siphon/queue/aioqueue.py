@@ -3,10 +3,11 @@ import csv
 import functools
 import json
 from asyncio import Queue
+from typing import (IO, Any, AsyncGenerator, Callable, Coroutine, Dict,
+                    Generator, List, Tuple, Type, Union)
+
 from siphon.queue import violations
 from siphon.queue.types import DataT
-from typing import (IO, Any, AsyncGenerator, Callable, Dict, Generator, List,
-                    Tuple, Union, Type, Coroutine)
 
 
 class AioQueue(Queue):
@@ -60,11 +61,11 @@ class AioQueue(Queue):
 
 class TypedAioQueue(AioQueue):
     def __init__(
-            self,
-            model: DataT = None,
-            violations_strategy: Type[violations.ViolationStrategy] = violations.RaiseOnViolation,
-            maxsize: int = 0,
-            loop=None
+        self,
+        model: DataT = None,
+        violations_strategy: Type[violations.ViolationStrategy] = violations.RaiseOnViolation,
+        maxsize: int = 0,
+        loop=None,
     ):
         self._model = model
         self._check_for_violation = violations_strategy()
