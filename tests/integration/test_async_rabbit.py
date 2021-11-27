@@ -69,7 +69,7 @@ async def test_failed_worker():
         host='nohost',
         port=5432,
         vhost='/',
-        username='guest',
+        user='guest',
         password='wrong',
         routing_key='routing',
         exchange='exchange',

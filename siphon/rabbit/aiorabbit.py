@@ -91,7 +91,7 @@ class AioRabbitConsumer:
         self.connection = await rabbit.connect_robust(
             host=self.config.host,
             port=self.config.port,
-            login=self.config.username,
+            login=self.config.user,
             password=self.config.password.get_secret_value(),
             virtualhost=self.config.vhost,
         )

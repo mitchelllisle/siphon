@@ -8,7 +8,7 @@ class RabbitConfig(BaseSettings):
     host: str
     port: int = 5672
     vhost: str
-    username: str
+    user: str
     password: SecretStr
     routing_key: Optional[str]
     exchange: str
