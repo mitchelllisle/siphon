@@ -1,3 +1,4 @@
+import asyncio
 from functools import partial
 from unittest.mock import mock_open, patch
 
@@ -157,3 +158,26 @@ async def test_csv_export():
 
     await q.put({'a': 1})
     q.to_json('test.json')
+
+
+@pytest.mark.asyncio
+async def test_consumer_on_queue():
+    q = AioQueue()
+
+    found = []
+    q.add_consumer(lambda x: found.append(x))
+
+    for i in range(100):
+        await q.put(i)
+
+    await q.wait_for_consumer()
+
+    assert len(found) == 100
+    assert q.empty()
+
+
+@pytest.mark.asyncio
+async def test_consumer_added():
+    q = AioQueue()
+    task = q.add_consumer(lambda x: x)
+    assert isinstance(task, asyncio.Task)
