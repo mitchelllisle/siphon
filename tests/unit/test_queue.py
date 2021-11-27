@@ -32,8 +32,8 @@ def test_typed_queue_violation_strat():
 
 def test_typed_queue_violation_strat_type_checking():
     strat = ViolationStrategy()
-    assert strat._is_item_of_type(1, int) is True
-    assert strat._is_item_of_type('1', int) is False
+    assert strat.validate_type(1, int) is True
+    assert strat.validate_type('1', int) is False
 
 
 def test_raise_strat():

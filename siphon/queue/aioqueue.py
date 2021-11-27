@@ -2,15 +2,15 @@ import asyncio
 import csv
 import functools
 import json
-from asyncio import Queue
+from typing import (Any, AsyncGenerator, Callable, Dict, Generator, List,
+                    Tuple, Type, Union)
+
 from siphon.queue import violations
 from siphon.queue.types import DataT
-from typing import (IO, Any, AsyncGenerator, Callable, Dict, Generator, List,
-                    Tuple, Union, Type)
 
 
-class AioQueue(Queue):
-    def collect(self):
+class AioQueue(asyncio.Queue):
+    def collect(self) -> List[Any]:
         return [self.get_nowait() for _ in range(self.qsize())]
 
     async def __aiter__(self) -> AsyncGenerator:
@@ -18,14 +18,14 @@ class AioQueue(Queue):
             row = await self.get()
             yield row
 
-    def to_json(self, path: Union[str, bytes, IO], mode: str = 'w', **kwargs) -> str:
+    def to_json(self, path: Union[str, bytes], mode: str = 'w', **kwargs) -> Union[str, bytes]:
         with open(path, mode, **kwargs) as file:
             json.dump(self.collect(), file)
             return path
 
     def to_csv(
-        self, path: Union[str, bytes, IO], cols: List[str], mode: str = 'w', **kwargs
-    ) -> str:
+        self, path: Union[str, bytes], cols: List[str], mode: str = 'w', **kwargs
+    ) -> Union[str, bytes]:
         with open(path, mode, **kwargs) as file:
             writer = csv.DictWriter(file, fieldnames=cols)
             writer.writeheader()
@@ -40,17 +40,17 @@ class AioQueue(Queue):
 
 class TypedAioQueue(AioQueue):
     def __init__(
-            self,
-            model: DataT = None,
-            violations_strategy: Type[violations.ViolationStrategy] = violations.RaiseOnViolation,
-            maxsize: int = 0,
-            loop=None
+        self,
+        model: DataT,
+        violations_strategy: Type[violations.ViolationStrategy] = violations.RaiseOnViolation,
+        maxsize: int = 0,
+        loop=None,
     ):
         self._model = model
         self._check_for_violation = violations_strategy()
         super().__init__(maxsize=maxsize, loop=loop)
 
-    def _put(self, item: Dict):
+    def _put(self, item: Dict) -> None:
         if self._model:
             new = self._check_for_violation(item, self._model)
             if new:
@@ -66,7 +66,7 @@ class CollectedError:
         self.retries = 0
 
     @property
-    def reraise(self):
+    def reraise(self) -> None:
         raise self.initial_error
 
     @property
@@ -81,7 +81,7 @@ class CollectedError:
         return f'CollectedError({self.func_name}:{self.initial_error.__str__()})'
 
 
-def queuecollect(errors: Queue, success: Queue = None):
+def queuecollect(errors: asyncio.Queue, success: asyncio.Queue = None):
     """
     Collect outputs from a function/coroutine and optionally write to a Queue for both errors and
     successes. Why is this useful? Mostly it is used as part of a pipeline from aiostream library.

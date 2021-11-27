@@ -3,3 +3,5 @@ pydantic
 aiomysql
 asyncpg
 pg8000
+google-cloud-bigquery
+google-cloud-bigquery-storage

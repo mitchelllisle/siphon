@@ -6,6 +6,8 @@ __version__ = '0.5.0'
 
 
 from siphon.database.aiopostgres import AioPostgres, Record  # noqa: F401
+from siphon.database.bigquery import (BigQuery, BigQueryConfig,  # noqa: F401
+                                      Row)
 from siphon.database.mysql import AioMySQL, MySQLConfig  # noqa: F401
 from siphon.database.postgres import Postgres, PostgresConfig  # noqa: F401
 from siphon.queue.aioqueue import CollectedError  # noqa: F401
