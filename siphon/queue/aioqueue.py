@@ -6,10 +6,30 @@ from asyncio import Queue
 from siphon.queue import violations
 from siphon.queue.types import DataT
 from typing import (IO, Any, AsyncGenerator, Callable, Dict, Generator, List,
-                    Tuple, Union, Type)
+                    Tuple, Union, Type, Coroutine)
 
 
 class AioQueue(Queue):
+    async def wait_for_consumer(self):
+        """
+        Queue.join is a terrible name for what it does which is wait until all tasks on the queue
+        have been processed. This is just a method with a more obvious name that mimics join.
+        """
+        await self.join()
+
+    def add_consumer(self, callback: Union[Callable, Coroutine]) -> asyncio.Task:
+        task = asyncio.create_task(self._consumer(callback))
+        return task
+
+    async def _consumer(self, callback: Union[Callable, Coroutine]):
+        while True:
+            val = await self.get()
+            if asyncio.iscoroutinefunction(callback):
+                await callback(val)
+            else:
+                callback(val)
+            self.task_done()
+
     def collect(self):
         return [self.get_nowait() for _ in range(self.qsize())]
 

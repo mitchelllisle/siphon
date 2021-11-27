@@ -8,9 +8,9 @@ siphon/database/config.py           11      0   100%
 siphon/database/mysql.py            44      4    91%
 siphon/database/postgres.py         53      8    85%
 siphon/queue/__init__.py             0      0   100%
-siphon/queue/aioqueue.py            72      2    97%
+siphon/queue/aioqueue.py            83      3    96%
 siphon/queue/types.py                2      0   100%
 siphon/queue/violations.py          23      0   100%
 siphon/siphon.py                     0      0   100%
 ----------------------------------------------------
-TOTAL                              274     31    89%
+TOTAL                              285     32    89%
