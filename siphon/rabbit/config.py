@@ -13,7 +13,7 @@ class RabbitConfig(BaseSettings):
     routing_key: Optional[str]
     exchange: str
     exchange_type: str
-    queue_name: str
+    queue: str
 
     class Config:
         case_sensitive = False

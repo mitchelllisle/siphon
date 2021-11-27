@@ -74,7 +74,7 @@ async def test_failed_worker():
         routing_key='routing',
         exchange='exchange',
         exchange_type='fanout',
-        queue_name='queue',
+        queue='queue',
     )
     worker = AioRabbitConsumer(config)
     with pytest.raises(ConnectionError):

@@ -119,10 +119,10 @@ class AioRabbitConsumer:
         Returns: None
 
         """
-        logger.debug(f'declaring queue {self.config.queue_name}')
-        self.queue = await self.channel.declare_queue(self.config.queue_name, durable=True)
+        logger.debug(f'declaring queue {self.config.queue}')
+        self.queue = await self.channel.declare_queue(self.config.queue, durable=True)
 
-        logger.debug(f'binding queue {self.config.queue_name} to {self.config.exchange}')
+        logger.debug(f'binding queue {self.config.queue} to {self.config.exchange}')
         await self.queue.bind(exchange=self.exchange, routing_key=self.config.routing_key)
 
     async def __call__(self, *args, **kwargs):
