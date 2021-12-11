@@ -4,7 +4,10 @@ import functools
 import json
 from asyncio import Queue
 from typing import (IO, Any, AsyncGenerator, Callable, Dict, Generator, List,
-                    Tuple, Union, Type, Optional)
+                    Optional, Tuple, Type, Union)
+
+from siphon.queue import violations
+from siphon.queue.types import DataT
 
 from siphon.queue import violations
 from siphon.queue.types import DataT
@@ -42,23 +45,23 @@ class AioQueue(Queue):
             yield row
 
     def to_json(
-            self,
-            path: Union[str, bytes, IO],
-            pre_transform: Optional[Callable] = None,
-            mode: str = 'w',
-            **kwargs
+        self,
+        path: Union[str, bytes, IO],
+        pre_transform: Optional[Callable] = None,
+        mode: str = 'w',
+        **kwargs,
     ) -> str:
         with open(path, mode, **kwargs) as file:
             json.dump(self.collect(pre_transform), file)
             return path
 
     def to_csv(
-            self,
-            path: Union[str, bytes, IO],
-            cols: List[str],
-            pre_transform: Optional[Callable] = None,
-            mode: str = 'w',
-            **kwargs
+        self,
+        path: Union[str, bytes, IO],
+        cols: List[str],
+        pre_transform: Optional[Callable] = None,
+        mode: str = 'w',
+        **kwargs,
     ) -> str:
         with open(path, mode, **kwargs) as file:
             writer = csv.DictWriter(file, fieldnames=cols)

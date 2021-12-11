@@ -1,9 +1,9 @@
 import asyncio
 from functools import partial
 from unittest.mock import mock_open, patch
-from pydantic import BaseModel
 
 import pytest
+from pydantic import BaseModel
 
 from siphon import (AioQueue, CollectedError, DiscardOnViolation,
                     RaiseOnViolation, TypedAioQueue, ViolationStrategy,
