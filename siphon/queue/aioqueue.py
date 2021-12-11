@@ -6,31 +6,48 @@ from asyncio import Queue
 from siphon.queue import violations
 from siphon.queue.types import DataT
 from typing import (IO, Any, AsyncGenerator, Callable, Dict, Generator, List,
-                    Tuple, Union, Type)
+                    Tuple, Union, Type, Optional)
 
 
 class AioQueue(Queue):
-    def collect(self):
-        return [self.get_nowait() for _ in range(self.qsize())]
+    def collect(self, transform: Optional[Callable] = None):
+        return [
+            transform(self.get_nowait()) if transform else self.get_nowait()
+            for _ in range(self.qsize())
+        ]
 
     async def __aiter__(self) -> AsyncGenerator:
         for _ in range(self.qsize()):
             row = await self.get()
             yield row
 
-    def to_json(self, path: Union[str, bytes, IO], mode: str = 'w', **kwargs) -> str:
+    def to_json(
+            self,
+            path: Union[str, bytes, IO],
+            pre_transform: Optional[Callable] = None,
+            mode: str = 'w',
+            **kwargs
+    ) -> str:
         with open(path, mode, **kwargs) as file:
-            json.dump(self.collect(), file)
+            json.dump(self.collect(pre_transform), file)
             return path
 
     def to_csv(
-        self, path: Union[str, bytes, IO], cols: List[str], mode: str = 'w', **kwargs
+            self,
+            path: Union[str, bytes, IO],
+            cols: List[str],
+            pre_transform: Optional[Callable] = None,
+            mode: str = 'w',
+            **kwargs
     ) -> str:
         with open(path, mode, **kwargs) as file:
             writer = csv.DictWriter(file, fieldnames=cols)
             writer.writeheader()
             for row in self:
-                writer.writerow(row)
+                if pre_transform:
+                    writer.writerow(pre_transform(row))
+                else:
+                    writer.writerow(row)
             return path
 
     def __iter__(self) -> Generator:
