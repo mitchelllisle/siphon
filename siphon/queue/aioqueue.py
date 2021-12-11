@@ -3,14 +3,12 @@ import csv
 import functools
 import json
 from asyncio import Queue
-from typing import (IO, Any, AsyncGenerator, Callable, Dict, Generator, List,
-                    Optional, Tuple, Type, Union)
+from typing import (IO, Any, AsyncGenerator, Callable, Coroutine, Dict,
+                    Generator, List, Optional, Tuple, Type, Union)
 
 from siphon.queue import violations
 from siphon.queue.types import DataT
 
-from siphon.queue import violations
-from siphon.queue.types import DataT
 
 class AioQueue(Queue):
     async def wait_for_consumer(self):
