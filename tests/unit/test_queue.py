@@ -180,8 +180,10 @@ async def test_csv_export_with_transform():
     q.to_csv('test.csv', cols=['a'], pre_transform=lambda x: x.dict())
 
     await q.put(TestModel())
-    q.to_json('test.json', pre_transform=lambda x: x.dict())\
-    
+    q.to_json('test.json', pre_transform=lambda x: x.dict())
+
+
+@pytest.mark.asyncio
 async def test_consumer_on_queue():
     q = AioQueue()
 
