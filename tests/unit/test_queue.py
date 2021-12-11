@@ -1,3 +1,4 @@
+import asyncio
 from functools import partial
 from unittest.mock import mock_open, patch
 from pydantic import BaseModel
@@ -179,4 +180,25 @@ async def test_csv_export_with_transform():
     q.to_csv('test.csv', cols=['a'], pre_transform=lambda x: x.dict())
 
     await q.put(TestModel())
-    q.to_json('test.json', pre_transform=lambda x: x.dict())
+    q.to_json('test.json', pre_transform=lambda x: x.dict())\
+    
+async def test_consumer_on_queue():
+    q = AioQueue()
+
+    found = []
+    q.add_consumer(lambda x: found.append(x))
+
+    for i in range(100):
+        await q.put(i)
+
+    await q.wait_for_consumer()
+
+    assert len(found) == 100
+    assert q.empty()
+
+
+@pytest.mark.asyncio
+async def test_consumer_added():
+    q = AioQueue()
+    task = q.add_consumer(lambda x: x)
+    assert isinstance(task, asyncio.Task)
