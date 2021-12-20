@@ -1,7 +1,9 @@
+import asyncio
 from functools import partial
 from unittest.mock import mock_open, patch
 
 import pytest
+from pydantic import BaseModel
 
 from siphon import (AioQueue, CollectedError, DiscardOnViolation,
                     RaiseOnViolation, TypedAioQueue, ViolationStrategy,
@@ -53,6 +55,13 @@ def test_queue_plus():
     q = AioQueue()
     [q.put_nowait(i) for i in ahundredints()]
     assert q.collect() == [i for i in ahundredints()]
+
+
+def test_collect_transform():
+    q = AioQueue()
+    [q.put_nowait(i) for i in ahundredints()]
+    data = q.collect(transform=lambda x: str(x))
+    assert all(map(lambda x: isinstance(x, str), data))
 
 
 def test_iter():
@@ -157,3 +166,41 @@ async def test_csv_export():
 
     await q.put({'a': 1})
     q.to_json('test.json')
+
+
+@pytest.mark.asyncio
+@patch('builtins.open', mock_open(read_data='data'))
+async def test_csv_export_with_transform():
+    class TestModel(BaseModel):
+        a: int = 1
+
+    q = AioQueue()
+    await q.put(TestModel())
+
+    q.to_csv('test.csv', cols=['a'], pre_transform=lambda x: x.dict())
+
+    await q.put(TestModel())
+    q.to_json('test.json', pre_transform=lambda x: x.dict())
+
+
+@pytest.mark.asyncio
+async def test_consumer_on_queue():
+    q = AioQueue()
+
+    found = []
+    q.add_consumer(lambda x: found.append(x))
+
+    for i in range(100):
+        await q.put(i)
+
+    await q.wait_for_consumer()
+
+    assert len(found) == 100
+    assert q.empty()
+
+
+@pytest.mark.asyncio
+async def test_consumer_added():
+    q = AioQueue()
+    task = q.add_consumer(lambda x: x)
+    assert isinstance(task, asyncio.Task)
