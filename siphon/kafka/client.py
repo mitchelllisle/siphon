@@ -26,7 +26,8 @@ class AioKafkaConsumer(ABC):
             security_protocol='SASL_SSL',
             ssl_context=self.ssl_context,
             sasl_plain_username=self.config.user,
-            sasl_plain_password=self.config.password.get_secret_value(),
+            sasl_plain_password=self.config.password.get_secret_value() if self.config.password
+            else None,
         )
         logger.info(f'{self.name} starting consumer...')
         await self.consumer.start()
