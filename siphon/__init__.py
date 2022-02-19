@@ -8,7 +8,8 @@ __version__ = '0.6.0'
 from siphon.database.aiopostgres import AioPostgres, Record  # noqa: F401
 from siphon.database.mysql import AioMySQL, MySQLConfig  # noqa: F401
 from siphon.database.postgres import Postgres, PostgresConfig  # noqa: F401
-from siphon.kafka.client import AioKafkaConsumer, AioKafkaProducer  # noqa: F401
+from siphon.kafka.client import (AioKafkaConsumer,  # noqa: F401
+                                 AioKafkaProducer)
 from siphon.kafka.config import KafkaConfig  # noqa: F401
 from siphon.logger import logger  # noqa: F401
 from siphon.queue.aioqueue import CollectedError  # noqa: F401

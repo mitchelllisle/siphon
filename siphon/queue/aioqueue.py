@@ -25,10 +25,10 @@ class AioQueue(Queue):
     async def _consumer(self, callback: Union[Callable, Coroutine]):
         while True:
             val = await self.get()
-            if asyncio.iscoroutinefunction(callback):  # noqa: type
-                await callback(val)  # noqa: type
+            if asyncio.iscoroutinefunction(callback):
+                await callback(val)
             else:
-                callback(val)  # noqa: type
+                callback(val)
             self.task_done()
 
     def collect(self, transform: Optional[Callable] = None):
@@ -56,9 +56,9 @@ class AioQueue(Queue):
         mode: str = 'w',
         **kwargs,
     ) -> str:
-        with open(path, mode, **kwargs) as file:  # noqa: type
+        with open(path, mode, **kwargs) as file:
             json.dump(self.collect(pre_transform), file)
-            return path  # noqa: type
+            return path
 
     def to_csv(
         self,
@@ -68,7 +68,7 @@ class AioQueue(Queue):
         mode: str = 'w',
         **kwargs,
     ) -> str:
-        with open(path, mode, **kwargs) as file:  # noqa: type
+        with open(path, mode, **kwargs) as file:
             writer = csv.DictWriter(file, fieldnames=cols)
             writer.writeheader()
             for row in self:
@@ -76,7 +76,7 @@ class AioQueue(Queue):
                     writer.writerow(pre_transform(row))
                 else:
                     writer.writerow(row)
-            return path  # noqa: type
+            return path
 
 
 class TypedAioQueue(AioQueue):
