@@ -34,8 +34,15 @@ class AioQueue(Queue):
     def collect(self, transform: Optional[Callable] = None):
         return [
             transform(self.get_nowait()) if transform else self.get_nowait()
-            for _ in range(self.qsize())
+            for _ in range(len(self))
         ]
+
+    def __iter__(self) -> Generator:
+        for _ in range(len(self)):
+            yield self.get_nowait()
+
+    def __len__(self) -> int:
+        return self.qsize()
 
     async def __aiter__(self) -> AsyncGenerator:
         for _ in range(self.qsize()):
@@ -70,10 +77,6 @@ class AioQueue(Queue):
                 else:
                     writer.writerow(row)
             return path
-
-    def __iter__(self) -> Generator:
-        for _ in range(self.qsize()):
-            yield self.get_nowait()
 
 
 class TypedAioQueue(AioQueue):
@@ -162,8 +165,8 @@ def queuecollect(errors: Queue, success: Queue = None):
                     result = await func(*args, **kwargs)
                 else:
                     result = func(*args, **kwargs)
-                if success:
-                    success.put_nowait(result)
+                if success is not None:
+                    await success.put(result)
                 else:
                     return result
             except Exception as err:

@@ -8,8 +8,8 @@ from siphon import AioQueue, AioRabbitConsumer, RabbitConfig
 
 
 @pytest.mark.asyncio
-async def test_worker_setup(config):
-    worker = AioRabbitConsumer(config)
+async def test_worker_setup(rabbit_config):
+    worker = AioRabbitConsumer(rabbit_config)
 
     await worker._rabbit_startup()
     assert isinstance(worker.connection, Connection)
@@ -20,8 +20,8 @@ async def test_worker_setup(config):
 
 
 @pytest.mark.asyncio
-async def test_worker_connection(config):
-    worker = AioRabbitConsumer(config)
+async def test_worker_connection(rabbit_config):
+    worker = AioRabbitConsumer(rabbit_config)
 
     await worker.get_rabbit_channel()
     assert worker.connection.is_closed is False
@@ -31,8 +31,8 @@ async def test_worker_connection(config):
 
 
 @pytest.mark.asyncio
-async def test_worker_queue(config):
-    worker = AioRabbitConsumer(config)
+async def test_worker_queue(rabbit_config):
+    worker = AioRabbitConsumer(rabbit_config)
 
     await worker.get_rabbit_channel()
     await worker.get_exchange()
@@ -42,8 +42,8 @@ async def test_worker_queue(config):
 
 
 @pytest.mark.asyncio
-async def test_worker_exchange(config):
-    worker = AioRabbitConsumer(config)
+async def test_worker_exchange(rabbit_config):
+    worker = AioRabbitConsumer(rabbit_config)
 
     await worker.get_rabbit_channel()
     await worker.get_exchange()
@@ -52,9 +52,9 @@ async def test_worker_exchange(config):
 
 
 @pytest.mark.asyncio
-async def test_worker_message(config, mock_message):
+async def test_worker_message(rabbit_config, mock_message):
     q = AioQueue()
-    worker = AioRabbitConsumer(config)
+    worker = AioRabbitConsumer(rabbit_config)
     worker.transform = lambda x: q.put_nowait(x)
     await worker.on_message(mock_message)
     assert mock_message.processed is True
