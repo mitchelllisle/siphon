@@ -5,8 +5,8 @@ from typing import ClassVar, List
 
 import aiokafka as kafka
 
-from siphon.logger import logger
 from siphon.kafka.config import KafkaConfig
+from siphon.logger import logger
 
 
 class AioKafkaConsumer(ABC):
@@ -23,10 +23,11 @@ class AioKafkaConsumer(ABC):
             *self.topics,
             client_id=self.name,
             bootstrap_servers=f'{self.config.host}:{self.config.port}',
-            security_protocol='SASL_SSL',
+            security_protocol=self.config.security_protocol,
             ssl_context=self.ssl_context,
             sasl_plain_username=self.config.user,
-            sasl_plain_password=self.config.password.get_secret_value() if self.config.password
+            sasl_plain_password=self.config.password.get_secret_value()
+            if self.config.password
             else None,
         )
         logger.info(f'{self.name} starting consumer...')
