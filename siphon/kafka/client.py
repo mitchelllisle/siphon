@@ -5,7 +5,7 @@ from typing import ClassVar, List
 
 import aiokafka as kafka
 
-from siphon import logger
+from siphon.logger import logger
 from siphon.kafka.config import KafkaConfig
 
 
