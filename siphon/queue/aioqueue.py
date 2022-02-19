@@ -165,7 +165,7 @@ def queuecollect(errors: Queue, success: Queue = None):
                     result = await func(*args, **kwargs)
                 else:
                     result = func(*args, **kwargs)
-                if success:
+                if success is not None:
                     await success.put(result)
                 else:
                     return result
