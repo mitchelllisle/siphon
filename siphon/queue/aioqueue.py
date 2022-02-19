@@ -25,17 +25,24 @@ class AioQueue(Queue):
     async def _consumer(self, callback: Union[Callable, Coroutine]):
         while True:
             val = await self.get()
-            if asyncio.iscoroutinefunction(callback):
-                await callback(val)
+            if asyncio.iscoroutinefunction(callback):  # noqa: type
+                await callback(val)  # noqa: type
             else:
-                callback(val)
+                callback(val)  # noqa: type
             self.task_done()
 
     def collect(self, transform: Optional[Callable] = None):
         return [
             transform(self.get_nowait()) if transform else self.get_nowait()
-            for _ in range(self.qsize())
+            for _ in range(len(self))
         ]
+
+    def __iter__(self) -> Generator:
+        for _ in range(len(self)):
+            yield self.get_nowait()
+
+    def __len__(self) -> int:
+        return self.qsize()
 
     async def __aiter__(self) -> AsyncGenerator:
         for _ in range(self.qsize()):
@@ -49,9 +56,9 @@ class AioQueue(Queue):
         mode: str = 'w',
         **kwargs,
     ) -> str:
-        with open(path, mode, **kwargs) as file:
+        with open(path, mode, **kwargs) as file:  # noqa: type
             json.dump(self.collect(pre_transform), file)
-            return path
+            return path  # noqa: type
 
     def to_csv(
         self,
@@ -61,7 +68,7 @@ class AioQueue(Queue):
         mode: str = 'w',
         **kwargs,
     ) -> str:
-        with open(path, mode, **kwargs) as file:
+        with open(path, mode, **kwargs) as file:  # noqa: type
             writer = csv.DictWriter(file, fieldnames=cols)
             writer.writeheader()
             for row in self:
@@ -69,11 +76,7 @@ class AioQueue(Queue):
                     writer.writerow(pre_transform(row))
                 else:
                     writer.writerow(row)
-            return path
-
-    def __iter__(self) -> Generator:
-        for _ in range(self.qsize()):
-            yield self.get_nowait()
+            return path  # noqa: type
 
 
 class TypedAioQueue(AioQueue):
@@ -163,7 +166,7 @@ def queuecollect(errors: Queue, success: Queue = None):
                 else:
                     result = func(*args, **kwargs)
                 if success:
-                    success.put_nowait(result)
+                    await success.put(result)
                 else:
                     return result
             except Exception as err:
