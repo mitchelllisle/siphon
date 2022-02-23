@@ -2,7 +2,7 @@
 
 __author__ = """Mitchell Lisle"""
 __email__ = 'm.lisle90@gmail.com'
-__version__ = '0.6.0'
+__version__ = '1.0.0'
 
 
 from siphon.database.aiopostgres.client import AioPostgres, Record  # noqa: F401
