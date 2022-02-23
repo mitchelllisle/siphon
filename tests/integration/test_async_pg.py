@@ -36,8 +36,8 @@ class TestAioPostgres(aiounittest.AsyncTestCase):
         _type = 'semi-hollow-electric'
         await self.postgres.setup_pool()
         async for row in self.postgres.read(
-            query='SELECT * FROM instruments.guitars WHERE id = $1 AND type = $2',
-            params=(_id, _type),
+            query='SELECT * FROM instruments.guitars WHERE id = {id} AND type = {type}',
+            params={'id': _id, 'type': _type},
         ):
             assert str(row['id']) == _id
             assert str(row['type']) == _type
@@ -46,7 +46,7 @@ class TestAioPostgres(aiounittest.AsyncTestCase):
     async def test_read_all(self):
         await self.postgres.setup_pool()
         data = await self.postgres.read_all('SELECT * FROM instruments.guitars')
-        assert len(data) == 1
+        assert len(data) == 3
         await self.postgres.close_pool()
 
     async def test_commit(self):

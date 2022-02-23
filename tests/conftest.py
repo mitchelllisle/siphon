@@ -3,8 +3,8 @@ import json
 import pytest
 from aio_pika import IncomingMessage
 from aio_pika.message import DeliveredMessage
-from pamqp import ContentHeader
-from pamqp.specification import Basic
+from pamqp.header import ContentHeader
+from pamqp.commands import Basic
 
 from siphon import RabbitConfig
 

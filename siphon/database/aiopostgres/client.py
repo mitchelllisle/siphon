@@ -1,9 +1,10 @@
-from typing import AsyncGenerator, List, Tuple, Type
+from typing import AsyncGenerator, List, Tuple, Dict, Type, Union
 
 from asyncpg import Record, create_pool
 from pydantic import BaseModel
 
 from siphon.database.config import PostgresConfig
+from siphon.database.aiopostgres.params import NamedParams
 
 
 class AioPostgres:
@@ -28,7 +29,7 @@ class AioPostgres:
 
     @property
     def closed(self) -> bool:
-        return self.pool._closed  # type: ignore
+        return self.pool._closed  # noqa
 
     async def setup_pool(self) -> None:
         self.pool = await create_pool(
@@ -47,7 +48,7 @@ class AioPostgres:
         return self
 
     async def read(
-        self, query: str, params: Tuple = None, model: Type[BaseModel] = None
+        self, query: str, params: Dict = None, model: Type[BaseModel] = None
     ) -> AsyncGenerator:
         """
         Read results from postgres and return an AsyncGenerator. This allows you to read large
@@ -65,12 +66,12 @@ class AioPostgres:
         Returns: An AsyncGenerator
 
         """
+        _params = NamedParams(**params) if params is not None else None
+        _query = query.format_map(_params)
+
         async with self.pool.acquire() as conn:  # type: ignore
             async with conn.transaction():
-                if params:
-                    cur = conn.cursor(query, *params)
-                else:
-                    cur = conn.cursor(query)
+                cur = conn.cursor(_query, *_params.as_tuple) if _params else conn.cursor(_query)
                 async for row in cur:
                     if model:
                         yield model(**row)
@@ -81,8 +82,8 @@ class AioPostgres:
         await self.close_pool()
 
     async def read_all(
-        self, query: str, params: Tuple = None, model: Type[BaseModel] = None
-    ) -> List[Record]:
+        self, query: str, params: Dict = None, model: Type[BaseModel] = None
+    ) -> Union[List[Record], Type[BaseModel]]:
         """
         In some cases you might want to just return the data without dealing with iteration you can
         use this. We'll return all the records in a list. Be careful using this for large datasets
