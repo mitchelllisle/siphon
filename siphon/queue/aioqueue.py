@@ -81,12 +81,11 @@ class TypedAioQueue(AioQueue):
         self,
         model: DataT = None,
         violations_strategy: Type[violations.ViolationStrategy] = violations.RaiseOnViolation,
-        maxsize: int = 0,
-        loop=None,
+        maxsize: int = 0
     ):
         self._model = model
         self._check_for_violation = violations_strategy()
-        super().__init__(maxsize=maxsize, loop=loop)
+        super().__init__(maxsize=maxsize)
 
     def _put(self, item: Dict):
         if self._model:
