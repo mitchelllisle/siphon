@@ -81,7 +81,7 @@ class TypedAioQueue(AioQueue):
         self,
         model: DataT = None,
         violations_strategy: Type[violations.ViolationStrategy] = violations.RaiseOnViolation,
-        maxsize: int = 0
+        maxsize: int = 0,
     ):
         self._model = model
         self._check_for_violation = violations_strategy()
