@@ -94,10 +94,10 @@ install: clean install-tests install-dev ## install the package to the active Py
 	pip install -e .
 
 
-run-database: stop-database
+run-infra: stop-infra
 	docker-compose -f docker/dev/docker-compose.yaml up -d
 
-stop-database:
+stop-infra:
 	docker-compose -f docker/dev/docker-compose.yaml down --remove-orphans -v
 
 dist: clean ## builds source and wheel package

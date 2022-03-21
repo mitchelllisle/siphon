@@ -3,4 +3,4 @@ pydantic
 aiomysql
 asyncpg
 pg8000
-aio-pika
+aio-pika==6.8.0
