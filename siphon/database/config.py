@@ -1,4 +1,5 @@
 from pydantic import BaseSettings, Extra, SecretStr
+from typing import Optional
 
 
 class DatabaseConfig(BaseSettings):
@@ -11,6 +12,11 @@ class DatabaseConfig(BaseSettings):
         extra = Extra.ignore
 
 
+class MySQLConfig(DatabaseConfig):
+    port: int = 3306
+    db: Optional[str]
+
+
 class PostgresConfig(DatabaseConfig):
     port: int = 5432
-    database: str = 'postgres'
+    database: str

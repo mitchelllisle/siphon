@@ -1,13 +1,8 @@
-from typing import AsyncGenerator, Dict, List, Optional, Tuple, Union
+from typing import AsyncGenerator, Dict, List, Tuple, Union
 
 import aiomysql as mysql
 
-from siphon.database.config import DatabaseConfig
-
-
-class MySQLConfig(DatabaseConfig):
-    port: int = 3306
-    db: Optional[str]
+from siphon.database.config import MySQLConfig
 
 
 class AioMySQL:
