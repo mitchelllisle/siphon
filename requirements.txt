@@ -5,4 +5,4 @@ asyncpg
 pg8000
 google-cloud-bigquery
 google-cloud-bigquery-storage
-aio-pika
+aio-pika==6.8.0
